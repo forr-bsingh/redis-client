@@ -4,7 +4,7 @@
 from rediscluster import RedisCluster
 import sys, getopt
 
-environment = dict([('PROD','web-redisprod01.forrester.com'), ('STAGE','web-redisstg01.forrester.com'), ('TEST','web-redistest01.forrester.com'), ('DEV','web-redisdev01.forrester.com') ])
+environment = dict([('PROD',''), ('STAGE',''), ('TEST',''), ('DEV','') ])
 
 # step 2: define our connection information for Redis
 # Replaces with your configuration information
