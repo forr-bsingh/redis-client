@@ -4,26 +4,27 @@
 from rediscluster import RedisCluster
 import sys, getopt
 
-environment = dict([('PROD',''), ('STAGE',''), ('TEST',''), ('DEV','') ])
+servers = dict([('PROD',''), ('STAGE',''), ('TEST',''), ('DEV',''), ('LOCAL', 'localhost') ])
+ports = dict([('PROD',''), ('STAGE',''), ('TEST',''), ('DEV',''), ('LOCAL', '6379') ])
 
 # step 2: define our connection information for Redis
 # Replaces with your configuration information
 
 def print_usage():
     print ('Usage for redis cleanup client:')
-    print ('    redis-client.py --env <env> --key <pattern>')
+    print ('    redis-client.py --env <env> --key <pattern> [--display true]')
     print('OR')
-    print ('    redis-client.py -e <env> -k <pattern>')
+    print ('    redis-client.py -e <env> -k <pattern> [-d true]')
 
 def read_input(argv):
     "Read parameter for env key patterns"
-
-    if len(argv) != 4 :
+    display_keys = False
+    if len(argv) < 4 :
         print_usage()
         sys.exit(2)
-
+    
     try:
-        opts, args = getopt.getopt(argv,"e:k:",["env=","key="])
+        opts, args = getopt.getopt(argv,"e:k:d:",["env=","key=","display="])
     except getopt.GetoptError:
         print_usage()
         sys.exit(2)
@@ -38,11 +39,13 @@ def read_input(argv):
                 print ("Key pattern must end with '*' for pattern search across redis cluster")
                 sys.exit(2)
             key_pattern = arg
-    return env,key_pattern
+        elif opt in ("-d", "--display"):
+            display_keys = arg == 'true'
+    return env,key_pattern,display_keys
 
 def find_connection(env):
     "Find connection details based on env"
-    return environment[env],6379;    
+    return servers[env],ports[env];    
 
 def hello_redis(redis_host, redis_port):
     "Connect to redis at given host and port"
@@ -59,6 +62,12 @@ def scan_keys(r, pattern):
     
     return []
 
+def print_keys(display_keys, result):
+    "Print keys to standard display"
+    
+    if(display_keys == True):
+        print("Keys to be deleted are : ", result)
+
 def delete_keys(r, result):
     "Delete the given list of keys"
  
@@ -67,10 +76,9 @@ def delete_keys(r, result):
             r.delete(key)
         except Exception as cause:
             print ("Delete failed for key:", key, " cause: ", cause)
-            pass
 
 if __name__ == '__main__':
-    env,key_pattern = read_input(sys.argv[1:])
+    env,key_pattern,display_keys = read_input(sys.argv[1:])
     print('Setting up for', env)
     redis_host,redis_port = find_connection(env)
     print("Trying to connect to ", redis_host, ":", redis_port)
@@ -79,5 +87,6 @@ if __name__ == '__main__':
     print("Looking for keys matching the pattern: ", key_pattern)
     result = scan_keys(r, key_pattern)
     print("Found ", len(result), " keys")
+    print_keys(display_keys, result)
     print("Deletion in progress for ", len(result), " keys")
     delete_keys(r, result)
