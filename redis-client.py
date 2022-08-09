@@ -5,20 +5,21 @@ from rediscluster import RedisCluster
 import sys, getopt
 
 servers = dict([('PROD',''), ('STAGE',''), ('TEST',''), ('DEV',''), ('LOCAL', 'localhost') ])
-ports = dict([('PROD',''), ('STAGE',''), ('TEST',''), ('DEV',''), ('LOCAL', '6379') ])
+ports = dict([('PROD','6379'), ('STAGE','6379'), ('TEST','6379'), ('DEV','6379'), ('LOCAL', '6379') ])
 
 # step 2: define our connection information for Redis
 # Replaces with your configuration information
 
 def print_usage():
     print ('Usage for redis cleanup client:')
-    print ('    redis-client.py --env <env> --key <pattern> [--display true]')
+    print ('    redis-client.py --env <env> --key <pattern> [--display true] [--delete true]')
     print('OR')
-    print ('    redis-client.py -e <env> -k <pattern> [-d true]')
+    print ('    redis-client.py -e <env> -k <pattern> [-d true] [-dl true]')
 
 def read_input(argv):
     "Read parameter for env key patterns"
     display_keys = False
+    delete_keys = False
     if len(argv) < 4 :
         print_usage()
         sys.exit(2)
@@ -41,7 +42,9 @@ def read_input(argv):
             key_pattern = arg
         elif opt in ("-d", "--display"):
             display_keys = arg == 'true'
-    return env,key_pattern,display_keys
+        elif opt in ("-dl", "--delete"):
+            delete_keys = arg == 'true'
+    return env,key_pattern,display_keys,delete_keys
 
 def find_connection(env):
     "Find connection details based on env"
@@ -62,11 +65,10 @@ def scan_keys(r, pattern):
     
     return []
 
-def print_keys(display_keys, result):
+def print_keys(result):
     "Print keys to standard display"
     
-    if(display_keys == True):
-        print("Keys to be deleted are : ", result)
+    print("Keys found with given pattern are : ", result)
 
 def delete_keys(r, result):
     "Delete the given list of keys"
@@ -78,7 +80,7 @@ def delete_keys(r, result):
             print ("Delete failed for key:", key, " cause: ", cause)
 
 if __name__ == '__main__':
-    env,key_pattern,display_keys = read_input(sys.argv[1:])
+    env,key_pattern,display_keys,delete_keys = read_input(sys.argv[1:])
     print('Setting up for', env)
     redis_host,redis_port = find_connection(env)
     print("Trying to connect to ", redis_host, ":", redis_port)
@@ -87,6 +89,8 @@ if __name__ == '__main__':
     print("Looking for keys matching the pattern: ", key_pattern)
     result = scan_keys(r, key_pattern)
     print("Found ", len(result), " keys")
-    print_keys(display_keys, result)
-    print("Deletion in progress for ", len(result), " keys")
-    delete_keys(r, result)
+    if(display_keys == True):
+        print_keys(result)
+    if(delete_keys == True):
+        print("Deletion in progress for ", len(result), " keys")
+        delete_keys(r, result)
