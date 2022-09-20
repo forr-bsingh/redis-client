@@ -71,7 +71,7 @@ def print_keys(r, result):
     print("Keys found with given pattern are : ", len(result))
     for key in result:
         try:
-            print ("[Key: ", key, ", Value: ", r.get(key), ", Timeout(ms): ", r.pttl(key), "]")
+            print ("[KEY: ", key, ", VALUE: ", r.get(key), ", TTL(ms): ", r.pttl(key), "]")
         except Exception as cause:
             print("Could not fetch value for the key :", key, " cause: ", cause)
 
