@@ -18,14 +18,14 @@ def print_usage():
 
 def read_input(argv):
     "Read parameter for env key patterns"
-    display_keys = False
-    delete_keys = False
+    display = False
+    delete = False
     if len(argv) < 4 :
         print_usage()
         sys.exit(2)
     
     try:
-        opts, args = getopt.getopt(argv,"e:k:d:",["env=","key=","display="])
+        opts, args = getopt.getopt(argv,"e:k:d:",["env=","key=","display=","delete="])
     except getopt.GetoptError:
         print_usage()
         sys.exit(2)
@@ -41,10 +41,10 @@ def read_input(argv):
                 sys.exit(2)
             key_pattern = arg
         elif opt in ("-d", "--display"):
-            display_keys = arg == 'true'
+            display = arg == 'true'
         elif opt in ("-dl", "--delete"):
-            delete_keys = arg == 'true'
-    return env,key_pattern,display_keys,delete_keys
+            delete = arg == 'true'
+    return env,key_pattern,display,delete
 
 def find_connection(env):
     "Find connection details based on env"
@@ -65,10 +65,15 @@ def scan_keys(r, pattern):
     
     return []
 
-def print_keys(result):
+def print_keys(r, result):
     "Print keys to standard display"
     
-    print("Keys found with given pattern are : ", result)
+    print("Keys found with given pattern are : ", len(result))
+    for key in result:
+        try:
+            print ("[Key: ", key, ", Value: ", r.get(key), ", Timeout(ms): ", r.pttl(key), "]")
+        except Exception as cause:
+            print("Could not fetch value for the key :", key, " cause: ", cause)
 
 def delete_keys(r, result):
     "Delete the given list of keys"
@@ -80,7 +85,7 @@ def delete_keys(r, result):
             print ("Delete failed for key:", key, " cause: ", cause)
 
 if __name__ == '__main__':
-    env,key_pattern,display_keys,delete_keys = read_input(sys.argv[1:])
+    env,key_pattern,display,delete = read_input(sys.argv[1:])
     print('Setting up for', env)
     redis_host,redis_port = find_connection(env)
     print("Trying to connect to ", redis_host, ":", redis_port)
@@ -89,8 +94,8 @@ if __name__ == '__main__':
     print("Looking for keys matching the pattern: ", key_pattern)
     result = scan_keys(r, key_pattern)
     print("Found ", len(result), " keys")
-    if(display_keys == True):
-        print_keys(result)
-    if(delete_keys == True):
+    if(display == True):
+        print_keys(r, result)
+    if(delete == True):
         print("Deletion in progress for ", len(result), " keys")
         delete_keys(r, result)
