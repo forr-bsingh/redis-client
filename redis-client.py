@@ -36,8 +36,8 @@ def read_input(argv):
         elif opt in ("-e", "--env"):
             env = arg.upper()
         elif opt in ("-k", "--key"):
-            if not arg.endswith("*"):
-                print ("Key pattern must end with '*' for pattern search across redis cluster")
+            if not arg.__contains__("*"):
+                print ("Key pattern must contain '*' for pattern match across redis cluster")
                 sys.exit(2)
             key_pattern = arg
         elif opt in ("-d", "--display"):
@@ -68,12 +68,12 @@ def scan_keys(r, pattern):
 def print_keys(r, result):
     "Print keys to standard display"
     
-    print("Keys found with given pattern are : ", len(result))
     for key in result:
         try:
             print ("[KEY: ", key, ", VALUE: ", r.get(key), ", TTL(ms): ", r.pttl(key), "]")
         except Exception as cause:
             print("Could not fetch value for the key :", key, " cause: ", cause)
+    print("Keys found with given pattern are : ", len(result))
 
 def delete_keys(r, result):
     "Delete the given list of keys"
