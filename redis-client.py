@@ -70,7 +70,23 @@ def print_keys(r, result):
     
     for key in result:
         try:
-            print ("[KEY: ", key, ", VALUE: ", r.get(key), ", TTL(ms): ", r.pttl(key), "]")
+            print ("=============================[KEY: ", key, ", TYPE: ", r.type(key), ", TTL(ms): ", r.pttl(key), "]=============================")
+            match r.type(key):
+                case "string":
+                    value = r.get(key)
+                case "list":
+                    value = r.lrange(key, 0, -1)
+                case "set":
+                    value = r.smembers(key)
+                case "zset":
+                    value = r.zrange(key, 0, -1, False, True)
+                case "hash":
+                    value = r.hgetall(key)
+                case "stream":
+                    value = ""
+                case _:
+                    value = ""
+            print("VALUE: ", value)
         except Exception as cause:
             print("Could not fetch value for the key :", key, " cause: ", cause)
     print("Keys found with given pattern are : ", len(result))
@@ -78,8 +94,10 @@ def print_keys(r, result):
 def delete_keys(r, result):
     "Delete the given list of keys"
  
+    print("Deletion in progress for ", len(result), " keys")
     for key in result:
         try:
+            print("Deleting : ", key)
             r.delete(key)
         except Exception as cause:
             print ("Delete failed for key:", key, " cause: ", cause)
@@ -97,5 +115,4 @@ if __name__ == '__main__':
     if(display == True):
         print_keys(r, result)
     if(delete == True):
-        print("Deletion in progress for ", len(result), " keys")
         delete_keys(r, result)
