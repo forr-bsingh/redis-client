@@ -4,8 +4,41 @@
 from rediscluster import RedisCluster
 import sys, getopt
 
-servers = dict([('PROD',''), ('STAGE',''), ('TEST',''), ('DEV',''), ('LOCAL', 'localhost') ])
-ports = dict([('PROD','6379'), ('STAGE','6379'), ('TEST','6379'), ('DEV','6379'), ('LOCAL', '6379') ])
+servers = dict([
+    ('AWS_DEV',''),
+    ('AWS_TEST',''),
+    ('AWS_STAGE',''),
+    ('AWS_PROD',''),
+    ('PROD',''), 
+    ('STAGE',''), 
+    ('TEST',''), 
+    ('DEV',''), 
+    ('LOCAL', 'localhost')
+    ])
+
+""" servers = dict([
+    ('AWS_DEV',''),
+    ('AWS_TEST',''),
+    ('AWS_STAGE',''),
+    ('AWS_PROD',''),
+    ('PROD',''), 
+    ('STAGE',''), 
+    ('TEST',''), 
+    ('DEV',''), 
+    ('LOCAL', 'localhost')
+    ]) """
+
+ports = dict([
+    ('AWS_DEV','6379'),
+    ('AWS_TEST','6379'),
+    ('AWS_STAGE','6379'),
+    ('AWS_PROD','6379'),
+    ('PROD','6379'),
+    ('STAGE','6379'), 
+    ('TEST','6379'), 
+    ('DEV','6379'), 
+    ('LOCAL', '6379') 
+    ])
 
 # step 2: define our connection information for Redis
 # Replaces with your configuration information
@@ -52,7 +85,7 @@ def find_connection(env):
 
 def hello_redis(redis_host, redis_port):
     "Connect to redis at given host and port"
-    return RedisCluster(host=redis_host, port=redis_port, password='', decode_responses=True)
+    return RedisCluster(host=redis_host, port=redis_port, password='', decode_responses=True, skip_full_coverage_check=True)
 
 
 def scan_keys(r, pattern):
