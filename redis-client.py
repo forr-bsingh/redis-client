@@ -91,10 +91,10 @@ def lookup_by_field(r, result, lookup):
     "Lookup for keys with given field and data"
     # TODO: Fix this -:>
     # Support patterns for look up can be field:data,data,data or field.field.field:data,data,data or field.[].field:data,data,data
-    #jobj = json.loads(value);
-    #print([x for x in jobj["userAccessGroups"] if x["registrationID"] == "1-74B5S4" ])
-    #print([x for x in jobj["services"] if x["accessLevel"] == "VIP" ])
-    #print(jobj["userAccessGroups"][0]["registrationID"])
+    # jobj = json.loads(value);
+    # print([x for x in jobj["userAccessGroups"] if x["registrationID"] == "1-74B5S4" ])
+    # print([x for x in jobj["services"] if x["accessLevel"] == "VIP" ])
+    # print(jobj["userAccessGroups"][0]["registrationID"])
     field = lookup.split(":")[0]
     data = lookup.split(":")[1]
 
@@ -146,7 +146,9 @@ def print_keys(r, result):
                     value = ""
                 case _:
                     value = ""
-            print("VALUE: ", json.dumps(json.loads(value), indent=4))
+            print("VALUE : ", value)
+            # Use the below to code to handle json formatting.
+            # print("VALUE: ", json.dumps(json.loads(value), indent=4))
         except Exception as cause:
             print("Could not fetch value for the key :", key, " cause: ", cause)
     print("Keys found with given pattern are : ", len(result))
