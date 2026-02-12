@@ -1,0 +1,24 @@
+{
+  "environments": {
+    "PROD": {
+      "host": "redis-prod.example.com",
+      "port": 6379,
+      "password": ""
+    },
+    "STAGE": {
+      "host": "redis-stage.example.com",
+      "port": 6379,
+      "password": ""
+    },
+    "DEV": {
+      "host": "redis-dev.example.com",
+      "port": 6379,
+      "password": ""
+    },
+    "LOCAL": {
+      "host": "localhost",
+      "port": 6379,
+      "password": ""
+    }
+  }
+}
