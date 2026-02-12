@@ -325,24 +325,26 @@ class TestConfigLoading:
         assert config["environments"]["TEST"]["host"] == "test.example.com"
 
     def test_load_config_file_not_found(self, capsys):
-        """Test config loading when file doesn't exist"""
+        """Test config loading when file doesn't exist - should exit"""
         with patch('builtins.open', side_effect=FileNotFoundError):
-            config = redis_client.load_config("nonexistent.json")
+            with pytest.raises(SystemExit) as exc_info:
+                redis_client.load_config("nonexistent.json")
 
-        assert config is None
+        assert exc_info.value.code == 1
         captured = capsys.readouterr()
-        assert "Config file nonexistent.json not found" in captured.out
+        assert "Error: Config file nonexistent.json not found" in captured.out
 
     def test_load_config_invalid_json(self, capsys):
-        """Test config loading with invalid JSON"""
+        """Test config loading with invalid JSON - should exit"""
         mock_file = mock_open(read_data="{ invalid json }")
 
         with patch('builtins.open', mock_file):
-            config = redis_client.load_config("config.json")
+            with pytest.raises(SystemExit) as exc_info:
+                redis_client.load_config("config.json")
 
-        assert config is None
+        assert exc_info.value.code == 1
         captured = capsys.readouterr()
-        assert "Invalid JSON in config file" in captured.out
+        assert "Error: Invalid JSON in config file" in captured.out
 
     def test_find_connection_with_config(self):
         """Test find_connection using config"""
@@ -362,13 +364,14 @@ class TestConfigLoading:
         assert port == 6380
         assert password == "testpass"
 
-    def test_find_connection_fallback_to_hardcoded(self):
-        """Test find_connection falls back to hardcoded values"""
-        host, port, password = redis_client.find_connection("LOCAL", None)
+    def test_find_connection_without_config(self, capsys):
+        """Test find_connection exits when no config provided"""
+        with pytest.raises(SystemExit) as exc_info:
+            redis_client.find_connection("LOCAL", None)
 
-        assert host == "localhost"
-        assert port == "6379"
-        assert password == ""
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "Invalid configuration format" in captured.out
 
     def test_find_connection_missing_password(self):
         """Test find_connection with config missing password"""
@@ -386,6 +389,24 @@ class TestConfigLoading:
         assert host == "test.example.com"
         assert port == 6379
         assert password == ""
+
+    def test_find_connection_env_not_found(self, capsys):
+        """Test find_connection exits when environment not in config"""
+        config = {
+            "environments": {
+                "TEST": {
+                    "host": "test.example.com",
+                    "port": 6379
+                }
+            }
+        }
+
+        with pytest.raises(SystemExit) as exc_info:
+            redis_client.find_connection("NONEXISTENT", config)
+
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "Environment 'NONEXISTENT' not found" in captured.out
 
 
 class TestArgParse:

@@ -6,22 +6,8 @@ import sys
 import json
 import argparse
 
-servers = dict([
-    ('PROD','redis-prod.example.com'),
-    ('STAGE','redis-stage.example.com'),
-    ('DEV','redis-dev.example.com'),
-    ('LOCAL', 'localhost')
-    ])
-
-ports = dict([
-    ('PROD','6379'),
-    ('STAGE','6379'),
-    ('DEV','6379'),
-    ('LOCAL', '6379')
-    ])
-
 # step 2: define our connection information for Redis
-# Replaces with your configuration information
+# Configuration is loaded from config.json file
 
 def load_config(config_path="config.json"):
     """Load configuration from JSON file"""
@@ -29,11 +15,12 @@ def load_config(config_path="config.json"):
         with open(config_path, 'r') as f:
             return json.load(f)
     except FileNotFoundError:
-        print(f"Warning: Config file {config_path} not found, using defaults")
-        return None
+        print(f"Error: Config file {config_path} not found")
+        print(f"Please create a config.json file with your Redis connection details")
+        sys.exit(1)
     except json.JSONDecodeError as e:
-        print(f"Warning: Invalid JSON in config file: {e}, using defaults")
-        return None
+        print(f"Error: Invalid JSON in config file: {e}")
+        sys.exit(1)
 
 def read_input(argv):
     """Read parameters using argparse (backward compatible interface)"""
@@ -66,15 +53,19 @@ def read_input(argv):
 
     return args.env.upper(), args.key, args.lookup, args.display, args.delete, args.config
 
-def find_connection(env, config=None):
-    """Find connection details based on env from config or defaults"""
-    if config and "environments" in config:
-        env_config = config["environments"].get(env)
-        if env_config:
-            return env_config["host"], env_config["port"], env_config.get("password", "")
+def find_connection(env, config):
+    """Find connection details based on env from config"""
+    if not config or "environments" not in config:
+        print("Error: Invalid configuration format. Missing 'environments' section")
+        sys.exit(1)
 
-    # Fallback to hardcoded values
-    return servers.get(env), ports.get(env), ""    
+    env_config = config["environments"].get(env)
+    if not env_config:
+        print(f"Error: Environment '{env}' not found in configuration")
+        print(f"Available environments: {', '.join(config['environments'].keys())}")
+        sys.exit(1)
+
+    return env_config["host"], env_config["port"], env_config.get("password", "")    
 
 def hello_redis(redis_host, redis_port, redis_password=''):
     "Connect to redis at given host and port"
