@@ -41,9 +41,9 @@ pip install -r requirements.txt
 
 ## Configuration
 
-### Using config.json (Recommended)
+### config.json (Required)
 
-The tool uses `config.json` for environment configuration. Edit this file to add your Redis connection details:
+The tool requires `config.json` for environment configuration. Create or edit this file to add your Redis connection details:
 
 ```json
 {
@@ -80,9 +80,7 @@ You can specify a custom configuration file:
 python3 redis-client.py -e DEV -k "test:*" --config /path/to/custom-config.json
 ```
 
-### Fallback to Hardcoded Values
-
-If `config.json` is not found, the tool falls back to hardcoded connection values for backward compatibility.
+**Note**: The `config.json` file is required. The tool will exit with an error if the configuration file is not found or contains invalid JSON.
 
 ## Usage
 
