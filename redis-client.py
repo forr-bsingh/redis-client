@@ -97,13 +97,16 @@ def get_value_by_type(r, key):
 def scan_keys(r, pattern):
     """Returns a list of all keys matching pattern using SCAN (non-blocking)"""
     keys = []
-    cursor = 0
     try:
-        while True:
-            cursor, partial_keys = r.scan(cursor, match=pattern, count=1000)
+        result = r.scan(match=pattern, count=1000)
+        if isinstance(result, dict):
+            # RedisCluster returns {node_name: (cursor, [keys]), ...}
+            for node_name, (cursor, partial_keys) in result.items():
+                keys.extend(partial_keys)
+        else:
+            # Standard redis returns (cursor, [keys])
+            _, partial_keys = result
             keys.extend(partial_keys)
-            if cursor == 0:
-                break
         return keys
     except Exception as error:
         print(f"Exception while scanning keys: {error}")
