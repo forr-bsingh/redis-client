@@ -18,25 +18,31 @@ spec.loader.exec_module(redis_client)
 class TestScanKeys:
     """Test the SCAN-based key scanning functionality"""
 
-    def test_scan_keys_pagination(self):
-        """Verify SCAN cursor iteration works correctly"""
+    def test_scan_keys_cluster_dict_response(self):
+        """Verify handling of RedisCluster dict response from multiple nodes"""
         mock_redis = Mock()
-        # Simulate SCAN returning results in multiple pages
-        mock_redis.scan.side_effect = [
-            (100, [b'key1', b'key2', b'key3']),  # First page
-            (200, [b'key4', b'key5']),            # Second page
-            (0, [b'key6'])                        # Final page (cursor 0)
-        ]
+        # RedisCluster returns {node_name: (cursor, [keys]), ...}
+        mock_redis.scan.return_value = {
+            "10.0.0.1:6379": (0, ["key1", "key2", "key3"]),
+            "10.0.0.2:6379": (0, ["key4", "key5"]),
+            "10.0.0.3:6379": (0, ["key6"]),
+        }
 
         result = redis_client.scan_keys(mock_redis, "test:*")
 
         assert len(result) == 6
-        assert mock_redis.scan.call_count == 3
-        # Verify cursor progression
-        calls = mock_redis.scan.call_args_list
-        assert calls[0][0][0] == 0    # First call with cursor 0
-        assert calls[1][0][0] == 100  # Second call with cursor 100
-        assert calls[2][0][0] == 200  # Third call with cursor 200
+        assert mock_redis.scan.call_count == 1
+        mock_redis.scan.assert_called_once_with(match="test:*", count=1000)
+
+    def test_scan_keys_standard_redis_response(self):
+        """Verify handling of standard redis (cursor, [keys]) response"""
+        mock_redis = Mock()
+        mock_redis.scan.return_value = (0, ["key1", "key2"])
+
+        result = redis_client.scan_keys(mock_redis, "test:*")
+
+        assert len(result) == 2
+        assert result == ["key1", "key2"]
 
     def test_scan_keys_error_handling(self):
         """Verify error handling returns empty list"""
@@ -48,7 +54,19 @@ class TestScanKeys:
         assert result == []
 
     def test_scan_keys_empty_result(self):
-        """Verify handling of pattern with no matches"""
+        """Verify handling of pattern with no matches on cluster"""
+        mock_redis = Mock()
+        mock_redis.scan.return_value = {
+            "10.0.0.1:6379": (0, []),
+            "10.0.0.2:6379": (0, []),
+        }
+
+        result = redis_client.scan_keys(mock_redis, "nonexistent:*")
+
+        assert result == []
+
+    def test_scan_keys_empty_standard_response(self):
+        """Verify handling of empty standard redis response"""
         mock_redis = Mock()
         mock_redis.scan.return_value = (0, [])
 
